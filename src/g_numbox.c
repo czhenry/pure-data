@@ -208,12 +208,12 @@ static void my_numbox_draw_new(t_my_numbox *x, t_glist *glist)
              xpos, ypos,
              xpos + iow, ypos - IEMGUI_ZOOM(x) + ioh,
              x, 0);
-    sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%06x -tags [list %lxLABEL label text]\n",
+    sys_vgui(".x%lx.c create text %d %d -anchor w -font {{%s} -%d %s} -fill #%06x -tags [list %lxLABEL label text]\n",
              canvas, xpos + x->x_gui.x_ldx * IEMGUI_ZOOM(x),
              ypos + x->x_gui.x_ldy * IEMGUI_ZOOM(x),
-             (strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : ""),
              x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
              x->x_gui.x_lcol, x);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
     my_numbox_ftoa(x);
     sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%06x -tags %lxNUMBER\n",
              canvas, xpos + half + 2*IEMGUI_ZOOM(x), ypos + half + d,
@@ -279,11 +279,11 @@ static void my_numbox_draw_erase(t_my_numbox* x, t_glist* glist)
 static void my_numbox_draw_config(t_my_numbox* x, t_glist* glist)
 {
     t_canvas *canvas = glist_getcanvas(glist);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 
-    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%06x -text {%s} \n",
+    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%06x\n",
              canvas, x, x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
-             (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol),
-             strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name:"");
+             (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol));
     sys_vgui(".x%lx.c itemconfigure %lxNUMBER -font {{%s} -%d %s} -fill #%06x \n",
              canvas, x, x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
              (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_fcol));
@@ -459,34 +459,20 @@ int my_numbox_check_minmax(t_my_numbox *x, double min, double max)
 static void my_numbox_properties(t_gobj *z, t_glist *owner)
 {
     t_my_numbox *x = (t_my_numbox *)z;
-    char buf[800];
-    t_symbol *srl[3];
 
-    iemgui_properties(&x->x_gui, srl);
     if(x->x_gui.x_fsf.x_change)
     {
         x->x_gui.x_fsf.x_change = 0;
         clock_unset(x->x_clock_reset);
         sys_queuegui(x, x->x_gui.x_glist, my_numbox_draw_update);
     }
-    sprintf(buf, "pdtk_iemgui_dialog %%s |nbx| \
-            -------dimensions(digits)(pix):------- %d %d width: %d %d height: \
-            -----------output-range:----------- %g min: %g max: %d \
-            %d lin log %d %d log-height: %d \
-            %s %s \
-            %s %d %d \
-            %d %d \
-            #%06x #%06x #%06x\n",
-            x->x_numwidth, MINDIGITS, x->x_gui.x_h/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
-            x->x_min, x->x_max, 0,/*no_schedule*/
-            x->x_lin0_log1, x->x_gui.x_isa.x_loadinit, -1,
-                x->x_log_height, /*no multi, but iem-characteristic*/
-            srl[0]->s_name, srl[1]->s_name,
-            srl[2]->s_name, x->x_gui.x_ldx, x->x_gui.x_ldy,
-            x->x_gui.x_fsf.x_font_style, x->x_gui.x_fontsize,
-            0xffffff & x->x_gui.x_bcol, 0xffffff & x->x_gui.x_fcol,
-                0xffffff & x->x_gui.x_lcol);
-    gfxstub_new(&x->x_gui.x_obj.ob_pd, x, buf);
+    iemgui_new_dialog(x, &x->x_gui, "nbx",
+                      x->x_numwidth, MINDIGITS,
+                      x->x_gui.x_h/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
+                      x->x_min, x->x_max,
+                      0,
+                      x->x_lin0_log1, "linear", "logarithmic",
+                      1, -1, x->x_log_height);
 }
 
 static void my_numbox_bang(t_my_numbox *x)

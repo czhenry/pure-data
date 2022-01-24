@@ -72,13 +72,13 @@ void bng_draw_new(t_bng *x, t_glist *glist)
              xpos + x->x_gui.x_w - inset, ypos + x->x_gui.x_h - inset,
              IEMGUI_ZOOM(x),
              (x->x_flashed ? x->x_gui.x_fcol : x->x_gui.x_bcol), x);
-    sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w \
+    sys_vgui(".x%lx.c create text %d %d -anchor w \
              -font {{%s} -%d %s} -fill #%6.6x -tags [list %lxLABEL label text]\n",
              canvas, xpos + x->x_gui.x_ldx * IEMGUI_ZOOM(x),
              ypos + x->x_gui.x_ldy * IEMGUI_ZOOM(x),
-             (strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : ""),
              x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
              x->x_gui.x_lcol, x);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 }
 
 void bng_draw_move(t_bng *x, t_glist *glist)
@@ -128,11 +128,11 @@ void bng_draw_erase(t_bng* x, t_glist* glist)
 void bng_draw_config(t_bng* x, t_glist* glist)
 {
     t_canvas *canvas = glist_getcanvas(glist);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 
-    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%6.6x -text {%s} \n",
+    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%6.6x\n",
              canvas, x, x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
-             (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol),
-             (strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : ""));
+             (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol));
     sys_vgui(".x%lx.c itemconfigure %lxBASE -fill #%6.6x\n", canvas, x, x->x_gui.x_bcol);
     sys_vgui(".x%lx.c itemconfigure %lxBUT -fill #%6.6x\n", canvas, x,
              (x->x_flashed ? x->x_gui.x_fcol : x->x_gui.x_bcol));
@@ -258,26 +258,13 @@ void bng_check_minmax(t_bng *x, int ftbreak, int fthold)
 static void bng_properties(t_gobj *z, t_glist *owner)
 {
     t_bng *x = (t_bng *)z;
-    char buf[800];
-    t_symbol *srl[3];
-
-    iemgui_properties(&x->x_gui, srl);
-    sprintf(buf, "pdtk_iemgui_dialog %%s |bang| \
-            ----------dimensions(pix):----------- %d %d size: 0 0 empty \
-            --------flash-time(ms)(ms):--------- %d intrrpt: %d hold: %d \
-            %d empty empty %d %d empty %d \
-            %s %s \
-            %s %d %d \
-            %d %d \
-            #%06x #%06x #%06x\n",
-            x->x_gui.x_w/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
-            x->x_flashtime_break, x->x_flashtime_hold, 2,/*min_max_schedule+clip*/
-            -1, x->x_gui.x_isa.x_loadinit, -1, -1,/*no linlog, no multi*/
-            srl[0]->s_name, srl[1]->s_name,
-            srl[2]->s_name, x->x_gui.x_ldx, x->x_gui.x_ldy,
-            x->x_gui.x_fsf.x_font_style, x->x_gui.x_fontsize,
-            0xffffff & x->x_gui.x_bcol, 0xffffff & x->x_gui.x_fcol, 0xffffff & x->x_gui.x_lcol);
-    gfxstub_new(&x->x_gui.x_obj.ob_pd, x, buf);
+    iemgui_new_dialog(x, &x->x_gui, "bang",
+                      x->x_gui.x_w/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
+                      0, 0,
+                      x->x_flashtime_break, x->x_flashtime_hold,
+                      2,
+                      -1, "", "",
+                      1, -1, -1);
 }
 
 static void bng_set(t_bng *x)

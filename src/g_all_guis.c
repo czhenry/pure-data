@@ -464,15 +464,13 @@ void iemgui_receive(void *x, t_iemgui *iemgui, t_symbol *s)
         (*iemgui->x_draw)(x, iemgui->x_glist, IEM_GUI_DRAW_MODE_IO + oldsndrcvable);
 }
 
-void iemgui_label(void *x, t_iemgui *iemgui, t_symbol *s)
+void iemgui_dolabel(void *x, t_iemgui *iemgui, t_symbol *s, int senditup)
 {
     t_symbol *old;
     char lab_escaped[MAXPDSTRING];
-
-        /* tb: fix for empty label { */
-        if (s == gensym(""))
-                s = gensym("empty");
-        /* tb } */
+    t_symbol*empty = gensym("empty");
+    if (s == gensym(""))
+        s = empty;
 
     old = iemgui->x_lab;
     iemgui->x_lab_unexpanded = s;
@@ -481,11 +479,20 @@ void iemgui_label(void *x, t_iemgui *iemgui, t_symbol *s)
     lab_escaped[MAXPDSTRING-1] = 0;
     pdgui_strnescape(lab_escaped, MAXPDSTRING, iemgui->x_lab->s_name, strlen(iemgui->x_lab->s_name) );
 
-    if(glist_isvisible(iemgui->x_glist) && iemgui->x_lab != old)
+    if(senditup < 0) {
+        senditup = (glist_isvisible(iemgui->x_glist) && iemgui->x_lab != old);
+    }
+
+    if(senditup)
         sys_vgui(".x%lx.c itemconfigure %lxLABEL -text [::pdtk_text::unescape {%s }] \n",
                  glist_getcanvas(iemgui->x_glist), x,
-                 strcmp(s->s_name, "empty")?lab_escaped:"");
+                 (s != empty)?lab_escaped:"");
 }
+void iemgui_label(void *x, t_iemgui *iemgui, t_symbol *s)
+{
+    iemgui_dolabel(x, iemgui, s, -1);
+}
+
 
 void iemgui_label_pos(void *x, t_iemgui *iemgui, t_symbol *s, int ac, t_atom *av)
 {
@@ -647,18 +654,58 @@ void iemgui_newzoom(t_iemgui *iemgui)
 void iemgui_properties(t_iemgui *iemgui, t_symbol **srl)
 {
     char label[MAXPDSTRING];
-
+    int i;
     srl[0] = iemgui->x_snd;
     srl[1] = iemgui->x_rcv;
+    srl[2] = iemgui->x_lab;
 
-    strcpy(label, iemgui->x_lab->s_name);
-    pdgui_strnescape(label, MAXPDSTRING,
-                    iemgui->x_lab->s_name, strlen(iemgui->x_lab->s_name));
-    srl[2] = gensym(label);
-
-    iemgui_all_dollar2raute(srl);
     iemgui_all_sym2dollararg(iemgui, srl);
-    iemgui_all_put_in_braces(srl);
+
+    for(i=0; i<3; i++) {
+        srl[i] = gensym(pdgui_strnescape(label, sizeof(label), srl[i]->s_name, strlen(srl[i]->s_name)));
+    }
+}
+
+void iemgui_new_dialog(void*x, t_iemgui*iemgui,
+                       const char*objname,
+                       t_float width,  t_float width_min,
+                       t_float height, t_float height_min,
+                       t_float range_min, t_float range_max,
+                       int schedule,
+                       int mode, /* lin0_log1 */
+                       const char* label_mode0,
+                       const char* label_mode1,
+                       int canloadbang, int steady, int number)
+{
+    char buf[MAXPDSTRING];
+    t_symbol *srl[3];
+    iemgui_properties(iemgui, srl);
+
+    sprintf(buf, "pdtk_iemgui_dialog %%s |%s| {}" /* x objname (dimension_label) */
+            " %g %g {} %g %g {}" /* width width_min (width_label) height height_min (height_label) */
+            " {} %g {} %g {}" /* (range_label) range_min range_max */
+            " %d" /* schedule */
+            " %d {%s} {%s}" /* mode label_mode0 label_mode1 */
+            " %d %d" /* loadbang steady */
+            " {} %d" /* (number_label) number */
+            " {%s } {%s } {%s }" /* send receive label */
+            " %d %d" /* label_posX label_posY */
+            " %d %d" /* label_fontID label_fontsize */
+            " #%06x #%06x #%06x\n" /* background foreground labelcolour */
+            ,
+            objname,
+            width, width_min, height, height_min,
+            range_min, range_max,
+            schedule,
+            mode, label_mode0, label_mode1,
+            canloadbang?iemgui->x_isa.x_loadinit:-1, steady,
+            number,
+            srl[0]->s_name, srl[1]->s_name, srl[2]->s_name,
+            iemgui->x_ldx, iemgui->x_ldy,
+            iemgui->x_fsf.x_font_style, iemgui->x_fontsize,
+            0xffffff & iemgui->x_bcol, 0xffffff & iemgui->x_fcol, 0xffffff & iemgui->x_lcol
+            );
+    gfxstub_new(&iemgui->x_obj.ob_pd, x, buf);
 }
 
 int iemgui_dialog(t_iemgui *iemgui, t_symbol **srl, int argc, t_atom *argv)
@@ -858,4 +905,3 @@ external GUI object uses obsolete Pd function iemgui_all_colfromload()");
         iemgui->x_lcol = iemgui_color_hex[bflcol[2]];
     }
 }
-

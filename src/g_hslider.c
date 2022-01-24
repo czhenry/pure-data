@@ -75,13 +75,13 @@ static void hslider_draw_new(t_hslider *x, t_glist *glist)
              canvas, r, ypos + IEMGUI_ZOOM(x),
              r, ypos + x->x_gui.x_h - IEMGUI_ZOOM(x),
              1 + 2 * IEMGUI_ZOOM(x), x->x_gui.x_fcol, x);
-    sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w \
+    sys_vgui(".x%lx.c create text %d %d -anchor w \
              -font {{%s} -%d %s} -fill #%06x -tags [list %lxLABEL label text]\n",
              canvas, xpos + x->x_gui.x_ldx * IEMGUI_ZOOM(x),
              ypos + x->x_gui.x_ldy * IEMGUI_ZOOM(x),
-             (strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : ""),
              x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
              x->x_gui.x_lcol, x);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 }
 
 static void hslider_draw_move(t_hslider *x, t_glist *glist)
@@ -131,11 +131,11 @@ static void hslider_draw_erase(t_hslider* x, t_glist* glist)
 static void hslider_draw_config(t_hslider* x, t_glist* glist)
 {
     t_canvas *canvas = glist_getcanvas(glist);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 
-    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%06x -text {%s} \n",
+    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%06x\n",
              canvas, x, x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
-             (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol),
-             (strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : ""));
+             (x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol));
     sys_vgui(".x%lx.c itemconfigure %lxKNOB -fill #%06x\n", canvas, x, x->x_gui.x_fcol);
     sys_vgui(".x%lx.c itemconfigure %lxBASE -fill #%06x\n", canvas, x, x->x_gui.x_bcol);
 }
@@ -288,26 +288,13 @@ void hslider_check_minmax(t_hslider *x, double min, double max)
 static void hslider_properties(t_gobj *z, t_glist *owner)
 {
     t_hslider *x = (t_hslider *)z;
-    char buf[800];
-    t_symbol *srl[3];
-
-    iemgui_properties(&x->x_gui, srl);
-    sprintf(buf, "pdtk_iemgui_dialog %%s |hsl| \
-            --------dimensions(pix)(pix):-------- %d %d width: %d %d height: \
-            -----------output-range:----------- %g left: %g right: %g \
-            %d lin log %d %d empty %d \
-            %s %s \
-            %s %d %d \
-            %d %d \
-            #%06x #%06x #%06x\n",
-            x->x_gui.x_w/IEMGUI_ZOOM(x), IEM_SL_MINSIZE, x->x_gui.x_h/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
-            x->x_min, x->x_max, 0.0,/*no_schedule*/
-            x->x_lin0_log1, x->x_gui.x_isa.x_loadinit, x->x_steady, -1,/*no multi, but iem-characteristic*/
-            srl[0]->s_name, srl[1]->s_name,
-            srl[2]->s_name, x->x_gui.x_ldx, x->x_gui.x_ldy,
-            x->x_gui.x_fsf.x_font_style, x->x_gui.x_fontsize,
-            0xffffff & x->x_gui.x_bcol, 0xffffff & x->x_gui.x_fcol, 0xffffff & x->x_gui.x_lcol);
-    gfxstub_new(&x->x_gui.x_obj.ob_pd, x, buf);
+    iemgui_new_dialog(x, &x->x_gui, "hsl",
+                      x->x_gui.x_w/IEMGUI_ZOOM(x), IEM_SL_MINSIZE,
+                      x->x_gui.x_h/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
+                      x->x_min, x->x_max,
+                      0,
+                      x->x_lin0_log1, "linear", "logarithmic",
+                      1, x->x_steady, -1);
 }
 
 static void hslider_set(t_hslider *x, t_floatarg f)    /* bugfix */

@@ -415,6 +415,10 @@ proc ::dialog_iemgui::pdtk_iemgui_dialog {mytoplevel mainheader dim_header \
                                        bcol fcol lcol} {
 
     set vid [string trimleft $mytoplevel .]
+    set snd [::pdtk_text::unescape $snd]
+    set rcv [::pdtk_text::unescape $rcv]
+    set gui_name [::pdtk_text::unescape $gui_name]
+
 
     set var_iemgui_wdt [concat iemgui_wdt_$vid]
     global $var_iemgui_wdt
@@ -542,10 +546,12 @@ proc ::dialog_iemgui::pdtk_iemgui_dialog {mytoplevel mainheader dim_header \
             set wdt_label [_ "Size:"]
             set num_label [_ "Num cells:"] }
         "|vu|" {
+            set ::dialog_iemgui::var_color_foreground($vid) none
             set iemgui_type [_ "VU Meter"]
             set wdt_label [_ "Width:"]
             set hgt_label [_ "Height:"] }
         "|cnv|" {
+            set ::dialog_iemgui::var_color_foreground($vid) none
             set iemgui_type [_ "Canvas"]
             set wdt_label [_ "Size:"]
             set iemgui_range_header [_ "Visible Rectangle (pix)"]

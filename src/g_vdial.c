@@ -79,12 +79,12 @@ void vradio_draw_new(t_vradio *x, t_glist *glist)
              xx11, yy11b,
              xx11 + iow, yy11b - IEMGUI_ZOOM(x) + ioh,
              x, 0);
-    sys_vgui(".x%lx.c create text %d %d -text {%s} -anchor w -font {{%s} -%d %s} -fill #%06x -tags [list %lxLABEL label text]\n",
+    sys_vgui(".x%lx.c create text %d %d -anchor w -font {{%s} -%d %s} -fill #%06x -tags [list %lxLABEL label text]\n",
              canvas, xx11 + x->x_gui.x_ldx * IEMGUI_ZOOM(x),
              yy11b + x->x_gui.x_ldy * IEMGUI_ZOOM(x),
-             (strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : ""),
              x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
              x->x_gui.x_lcol, x);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 }
 
 void vradio_draw_move(t_vradio *x, t_glist *glist)
@@ -145,11 +145,11 @@ void vradio_draw_config(t_vradio* x, t_glist* glist)
 {
     int n = x->x_number, i;
     t_canvas *canvas = glist_getcanvas(glist);
+    iemgui_dolabel(x, &x->x_gui, x->x_gui.x_lab, 1);
 
-    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%06x -text {%s} \n",
+    sys_vgui(".x%lx.c itemconfigure %lxLABEL -font {{%s} -%d %s} -fill #%06x\n",
              canvas, x, x->x_gui.x_font, x->x_gui.x_fontsize * IEMGUI_ZOOM(x), sys_fontweight,
-             x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol,
-             strcmp(x->x_gui.x_lab->s_name, "empty") ? x->x_gui.x_lab->s_name : "");
+             x->x_gui.x_fsf.x_selected ? IEM_GUI_COLOR_SELECTED : x->x_gui.x_lcol);
     for(i=0; i<n; i++)
     {
         sys_vgui(".x%lx.c itemconfigure %lxBASE%d -fill #%06x\n", canvas, x, i,
@@ -280,29 +280,17 @@ static void vradio_save(t_gobj *z, t_binbuf *b)
 static void vradio_properties(t_gobj *z, t_glist *owner)
 {
     t_vradio *x = (t_vradio *)z;
-    char buf[800];
-    t_symbol *srl[3];
     int hchange = -1;
-
-    iemgui_properties(&x->x_gui, srl);
     if(pd_class(&x->x_gui.x_obj.ob_pd) == vradio_old_class)
         hchange = x->x_change;
-    sprintf(buf, "pdtk_iemgui_dialog %%s |vradio| \
-            ----------dimensions(pix):----------- %d %d size: 0 0 empty \
-            empty 0.0 empty 0.0 empty %d \
-            %d new-only new&old %d %d number: %d \
-            %s %s \
-            %s %d %d \
-            %d %d \
-            #%06x #%06x #%06x\n",
-            x->x_gui.x_w/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
-            0,/*no_schedule*/
-            hchange, x->x_gui.x_isa.x_loadinit, -1, x->x_number,
-            srl[0]->s_name, srl[1]->s_name,
-            srl[2]->s_name, x->x_gui.x_ldx, x->x_gui.x_ldy,
-            x->x_gui.x_fsf.x_font_style, x->x_gui.x_fontsize,
-            0xffffff & x->x_gui.x_bcol, 0xffffff & x->x_gui.x_fcol, 0xffffff & x->x_gui.x_lcol);
-    gfxstub_new(&x->x_gui.x_obj.ob_pd, x, buf);
+
+    iemgui_new_dialog(x, &x->x_gui, "vradio",
+                      x->x_gui.x_w/IEMGUI_ZOOM(x), IEM_GUI_MINSIZE,
+                      0, 0,
+                      0, 0,
+                      0,
+                      hchange, "new-only", "new&old",
+                      1, -1, x->x_number);
 }
 
 static void vradio_dialog(t_vradio *x, t_symbol *s, int argc, t_atom *argv)

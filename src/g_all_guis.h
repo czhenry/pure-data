@@ -315,5 +315,22 @@ EXTERN int iem_symargstoint(t_iem_init_symargs *symargp);
 EXTERN void iem_inttofstyle(t_iem_fstyle_flags *fstylep, int n);
 EXTERN int iem_fstyletoint(t_iem_fstyle_flags *fstylep);
 
+/* these are deliberately not exported for now */
+
+/* update the label (both internally and on the GUI)
+ * senditup=0 never-to-gui; senditup=1 always-to-gui; senditup<0 autodetect
+ */
+void iemgui_dolabel(void *x, t_iemgui *iemgui, t_symbol *s, int senditup);
+
+void iemgui_new_dialog(void*x, t_iemgui*iemgui,
+                       const char*objname,
+                       t_float width,  t_float width_min,
+                       t_float height, t_float height_min,
+                       t_float range_min, t_float range_max, int range_checkmode,
+                       int mode, /* lin0_log1 */
+                       const char* mode_label0, const char* mode_label1,
+                       int canloadbang, int steady, int number);
+
+
 #define __g_all_guis_h_
 #endif /* __g_all_guis_h_ */
