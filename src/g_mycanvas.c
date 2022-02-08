@@ -318,13 +318,9 @@ static void *my_canvas_new(t_symbol *s, int argc, t_atom *argv)
         iem_inttosymargs(&x->x_gui.x_isa, atom_getfloatarg(i+10, argc, argv));
     }
     x->x_gui.x_draw = (t_iemfunptr)my_canvas_draw;
-    x->x_gui.x_fsf.x_snd_able = 1;
-    x->x_gui.x_fsf.x_rcv_able = 1;
+    x->x_gui.x_fsf.x_snd_able = (0 != x->x_gui.x_snd);
+    x->x_gui.x_fsf.x_rcv_able = (0 != x->x_gui.x_rcv);
     x->x_gui.x_glist = (t_glist *)canvas_getcurrent();
-    if (!strcmp(x->x_gui.x_snd->s_name, "empty"))
-        x->x_gui.x_fsf.x_snd_able = 0;
-    if (!strcmp(x->x_gui.x_rcv->s_name, "empty"))
-        x->x_gui.x_fsf.x_rcv_able = 0;
     if(a < 1)
         a = 1;
     x->x_gui.x_w = a;

@@ -689,10 +689,8 @@ static void *vu_new(t_symbol *s, int argc, t_atom *argv)
     x->x_gui.x_draw = (t_iemfunptr)vu_draw;
 
     x->x_gui.x_fsf.x_snd_able = 0;
-    x->x_gui.x_fsf.x_rcv_able = 1;
+    x->x_gui.x_fsf.x_rcv_able = (0 != x->x_gui.x_rcv);
     x->x_gui.x_glist = (t_glist *)canvas_getcurrent();
-    if (!strcmp(x->x_gui.x_rcv->s_name, "empty"))
-        x->x_gui.x_fsf.x_rcv_able = 0;
     if (x->x_gui.x_fsf.x_font_style == 1)
         strcpy(x->x_gui.x_font, "helvetica");
     else if(x->x_gui.x_fsf.x_font_style == 2)
